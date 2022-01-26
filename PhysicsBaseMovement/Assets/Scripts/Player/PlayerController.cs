@@ -5,25 +5,21 @@ namespace PBM
     [RequireComponent(typeof(InputController))]
     public class PlayerController : Character
     {
-        [Header("Camera")]
-        [Space(10)]
+        [Header("Camera")] [Space(10)]
         [SerializeField] private Transform _cam;
 
-        [Header("Movement Smooth Times")]
-        [Space(10)]
+        [Header("Movement Smooth Times")] [Space(10)]
+        [SerializeField] private float _directionSmoothTime = 2.5f;
         [SerializeField] private float _speedStartSmoothTime = 10.0f;
         [SerializeField] private float _speedStopSmoothTime = 5.0f;
         [SerializeField] private float _speedAirborneSmoothTime = 0.5f;
-        [SerializeField] private float _whileRotationSmoothTime = 0.125f;
-        [SerializeField] private float _startRotationSmoothTime = 0.025f;
+        [SerializeField] private float _rotationSmoothTime = 5.0f;
 
         // others
         private InputController _input;
+        Vector3 _smoothDir;
         private float _speed;
-        private float _targetRotation;
-        private float _rotationVel;
-        private float _rotationSmoothTime;
-        private float _rotation;
+        private float _targetDirection;
 
         protected override void Awake()
         {
@@ -51,32 +47,36 @@ namespace PBM
             else if (_input.move == Vector2.zero && _isGrounded) _speed = Mathf.Lerp(_speed, targetSpeed, _speedStopSmoothTime * Time.deltaTime);
             else if (!_isGrounded) _speed = Mathf.Lerp(_speed, targetSpeed, _speedAirborneSmoothTime * Time.deltaTime);
 
-            Vector3 moveDir = transform.forward * _speed;
+            // calculate rotation
+            if (_input.move != Vector2.zero)
+            {
+                _targetDirection = Mathf.Atan2(_input.move.x, _input.move.y) * Mathf.Rad2Deg + _cam.eulerAngles.y;
+            }
+
+            //Vector3 moveDir = transform.forward * _speed;
+            Vector3 movedir = Quaternion.Euler(0.0f, _targetDirection, 0.0f) * Vector3.forward;
+
+            // check for direction !!!!!!!!!!!!!!!!!!!!!!!!!! do something with it
+            if (_controller.velocity.magnitude > _threshold)
+                _smoothDir = Vector3.Lerp(_smoothDir, movedir, _directionSmoothTime * Time.deltaTime);
+            else
+                _smoothDir = movedir;
 
             // move
-            _controller.Move(new Vector3(moveDir.x, _controller.velocity.y, moveDir.z) * Time.deltaTime + new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
+            _controller.Move(_smoothDir.normalized * (_speed * Time.deltaTime) + new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
         }
 
         private void RotatePlayer()
         {
-            if (_input.move != Vector2.zero)
+            if (_controller.velocity.magnitude > _threshold)
             {
-                // rotation smooth time calculation
-                Vector3 vel = new Vector3(_controller.velocity.x, 0.0f, _controller.velocity.z);
-                if (vel.magnitude < _threshold) _rotationSmoothTime = _startRotationSmoothTime;
-                else _rotationSmoothTime = Mathf.Lerp(_rotationSmoothTime, _whileRotationSmoothTime, 4.0f * Time.deltaTime);
-
-                // calculate rotation
-                _targetRotation = Mathf.Atan2(_input.move.x, _input.move.y) * Mathf.Rad2Deg + _cam.transform.eulerAngles.y;
-                _rotation = Mathf.SmoothDampAngle(transform.eulerAngles.y, _targetRotation, ref _rotationVel, _rotationSmoothTime);
+                // calculate rotating player towards velocity 
+                Quaternion velocityRotation = Quaternion.LookRotation(_controller.velocity);
+                Quaternion desiredRotation = Quaternion.Euler(0.0f, velocityRotation.eulerAngles.y, 0.0f);
+                Quaternion smoothRotate = Quaternion.Lerp(transform.rotation, desiredRotation, _rotationSmoothTime);
 
                 // rotate player
-                transform.rotation = Quaternion.Euler(0.0f, _rotation, 0.0f);
-            }
-            else
-            {
-                // decrease smooth time
-                _rotationSmoothTime = Mathf.Lerp(_rotationSmoothTime, _startRotationSmoothTime, 8.0f * Time.deltaTime);
+                transform.rotation = smoothRotate;
             }
         }
 
@@ -90,7 +90,7 @@ namespace PBM
 
             if (_input.jump)
             {
-                _verticalVelocity = Mathf.Sqrt(_jumpHeight * -2f * _gravity * Time.deltaTime);
+                _verticalVelocity = Mathf.Sqrt(_jumpHeight * -2f * _gravity);
             }
         }
     }

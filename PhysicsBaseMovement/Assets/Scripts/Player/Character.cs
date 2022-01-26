@@ -23,7 +23,7 @@ namespace PBM
         protected const float _threshold = 0.1f;
 
         // gravity
-        protected float _gravity = -9.81f;
+        protected float _gravity = -24.0f;
         protected float _verticalVelocity;
         private float _terminalVelocity = 50.0f;
 
@@ -43,6 +43,7 @@ namespace PBM
 
             ApplyGravity();
             CalculateAcc();
+            TiltCharacter();
         }
 
         protected void CheckGround()
@@ -69,6 +70,11 @@ namespace PBM
             Debug.Log("you ded!");
         }
 
+        private void TiltCharacter()
+        {
+            
+        }
+
         private void CalculateAcc()
         {
             _vel = transform.InverseTransformVector(_controller.velocity);
@@ -77,6 +83,7 @@ namespace PBM
 
             if (Mathf.Abs(_acc.x) < _threshold && Mathf.Abs(_acc.z) < _threshold) _acc = Vector3.zero;
         }
+
 // debug
         private void OnDrawGizmosSelected()
         {
