@@ -32,16 +32,12 @@ namespace PBM
             _input = GetComponent<InputController>();
         }
 
-        protected override void FixedUpdate()
+        protected override void Update()
         {
-            base.FixedUpdate();
+            base.Update();
 
             Move();
             Jump();
-        }
-
-        private void Update()
-        {
             RotatePlayer();
         }
 
@@ -58,7 +54,7 @@ namespace PBM
             Vector3 moveDir = transform.forward * _speed;
 
             // move
-            _rb.velocity = new Vector3(moveDir.x, _rb.velocity.y, moveDir.z);
+            _controller.Move(new Vector3(moveDir.x, _controller.velocity.y, moveDir.z) * Time.deltaTime + new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
         }
 
         private void RotatePlayer()
@@ -66,7 +62,7 @@ namespace PBM
             if (_input.move != Vector2.zero)
             {
                 // rotation smooth time calculation
-                Vector3 vel = new Vector3(_rb.velocity.x, 0.0f, _rb.velocity.z);
+                Vector3 vel = new Vector3(_controller.velocity.x, 0.0f, _controller.velocity.z);
                 if (vel.magnitude < _threshold) _rotationSmoothTime = _startRotationSmoothTime;
                 else _rotationSmoothTime = Mathf.Lerp(_rotationSmoothTime, _whileRotationSmoothTime, 4.0f * Time.deltaTime);
 
@@ -75,7 +71,7 @@ namespace PBM
                 _rotation = Mathf.SmoothDampAngle(transform.eulerAngles.y, _targetRotation, ref _rotationVel, _rotationSmoothTime);
 
                 // rotate player
-                _rb.MoveRotation(Quaternion.Euler(0.0f, _rotation, 0.0f));
+                transform.rotation = Quaternion.Euler(0.0f, _rotation, 0.0f);
             }
             else
             {
@@ -91,7 +87,11 @@ namespace PBM
                 _input.jump = false;
                 return;
             }
-            if (_input.jump) _rb.AddForce(transform.up * _jumpForce, ForceMode.Impulse);
+
+            if (_input.jump)
+            {
+                _verticalVelocity = Mathf.Sqrt(_jumpHeight * -2f * _gravity * Time.deltaTime);
+            }
         }
     }
 }

@@ -2,27 +2,30 @@ using UnityEngine;
 
 namespace PBM
 {
-    [RequireComponent(typeof(Rigidbody))]
+    [RequireComponent(typeof(CharacterController))]
     public abstract class Character : MonoBehaviour
     {
         [Header("Character")]
-        [SerializeField] protected Rigidbody _rb;
+        [SerializeField] protected CharacterController _controller;
         [SerializeField] protected float _health;
         [SerializeField] protected float _walkSpeed;
         [SerializeField] protected float _sprintSpeed;
-        [SerializeField] protected float _jumpForce;
+        [SerializeField] protected float _jumpHeight;
 
-        [Header("Check Ground")]
-        [Space(10)]
+        [Header("Check Ground")] [Space(10)]
         [SerializeField] protected bool _isGrounded;
         [SerializeField] protected float _distanceToGround;
         [SerializeField] protected float _groundCheckRadius = 0.3f;
         [SerializeField] protected float _groundCheckPosOffset;
         [SerializeField] protected LayerMask _groundLayers;
         protected RaycastHit _hit;
-        protected Vector3 _groundCheckPos;
 
         protected const float _threshold = 0.1f;
+
+        // gravity
+        protected float _gravity = -9.81f;
+        protected float _verticalVelocity;
+        private float _terminalVelocity = 50.0f;
 
         // Acceleration tilt
         private Vector3 _vel;
@@ -31,33 +34,34 @@ namespace PBM
 
         protected virtual void Awake()
         {
-            _rb = GetComponent<Rigidbody>();
+            _controller = GetComponent<CharacterController>();
         }
 
-        protected virtual void FixedUpdate()
+        protected virtual void Update()
         {
             CheckGround();
-            CalculateDistanceToGround();
+
+            ApplyGravity();
             CalculateAcc();
-            TiltCharacter();
         }
 
         protected void CheckGround()
         {
-            _groundCheckPos = new Vector3(transform.position.x, transform.position.y + _groundCheckPosOffset, transform.position.z);
-            _isGrounded = Physics.CheckSphere(_groundCheckPos, _groundCheckRadius, _groundLayers, QueryTriggerInteraction.Ignore);
+            Vector3 groundCheckPos = new Vector3(transform.position.x, transform.position.y - _groundCheckPosOffset, transform.position.z);
+            _isGrounded = Physics.CheckSphere(groundCheckPos, _groundCheckRadius, _groundLayers, QueryTriggerInteraction.Ignore);
         }
 
-        protected void CalculateDistanceToGround()
+        private void ApplyGravity()
         {
-            if (_isGrounded)
+            if (_isGrounded & _verticalVelocity < 0.0f)
             {
-                _distanceToGround = 0.0f;
-                return;
+                _verticalVelocity = -2f;
             }
-            Physics.Raycast(_groundCheckPos, -transform.up, out _hit);
 
-            if (_hit.transform != null) _distanceToGround = Vector3.Distance(_groundCheckPos, _hit.point);
+            if (_verticalVelocity < _terminalVelocity)
+            {
+                _verticalVelocity += _gravity * Time.deltaTime;
+            }
         }
 
         protected virtual void Die()
@@ -65,27 +69,20 @@ namespace PBM
             Debug.Log("you ded!");
         }
 
-        private void TiltCharacter()
-        {
-            float zRot = _acc.x;
-            float xRot = _acc.z;
-
-            _rb.MoveRotation(Quaternion.Slerp(_rb.rotation, Quaternion.Euler(_rb.rotation.x, _rb.rotation.y, zRot), 8.0f));
-        }
-
         private void CalculateAcc()
         {
-            _vel = transform.InverseTransformVector(_rb.velocity);
+            _vel = transform.InverseTransformVector(_controller.velocity);
             _acc = (_vel - _lastVel) / Time.fixedDeltaTime;
             _lastVel = _vel;
 
             if (Mathf.Abs(_acc.x) < _threshold && Mathf.Abs(_acc.z) < _threshold) _acc = Vector3.zero;
         }
-        // debug
+// debug
         private void OnDrawGizmosSelected()
         {
+            Vector3 groundCheckPos = new Vector3(transform.position.x, transform.position.y - _groundCheckPosOffset, transform.position.z);
             Gizmos.color = Color.red;
-            Gizmos.DrawSphere(_groundCheckPos, _groundCheckRadius);
+            Gizmos.DrawSphere(groundCheckPos, _groundCheckRadius);
         }
     }
 }
