@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace PBM
+namespace HzrController
 {
     [RequireComponent(typeof(InputController))]
     public class PlayerController : Character
@@ -19,7 +19,7 @@ namespace PBM
         private InputController _input;
         Vector3 _smoothDir;
         private float _speed;
-        private float _targetDirection;
+        private float _targetAngle;
 
         protected override void Awake()
         {
@@ -32,38 +32,36 @@ namespace PBM
         {
             base.Update();
 
+            RotatePlayer();
             Move();
             Jump();
-            RotatePlayer();
         }
 
         private void Move()
         {
             float targetSpeed = 0.0f;
-            if (_input.move != Vector2.zero) targetSpeed = _input.sprint ? _sprintSpeed : _walkSpeed;
-
-            // start moving and stop moving speeds
-            if (_input.move != Vector2.zero && _isGrounded) _speed = Mathf.Lerp(_speed, targetSpeed, _speedStartSmoothTime * Time.deltaTime);
-            else if (_input.move == Vector2.zero && _isGrounded) _speed = Mathf.Lerp(_speed, targetSpeed, _speedStopSmoothTime * Time.deltaTime);
-            else if (!_isGrounded) _speed = Mathf.Lerp(_speed, targetSpeed, _speedAirborneSmoothTime * Time.deltaTime);
-
-            // calculate rotation
             if (_input.move != Vector2.zero)
             {
-                _targetDirection = Mathf.Atan2(_input.move.x, _input.move.y) * Mathf.Rad2Deg + _cam.eulerAngles.y;
+                targetSpeed = _input.sprint ? _sprintSpeed : _walkSpeed;
+
+                // calculate rotation
+                _targetAngle = Mathf.Atan2(_input.move.x, _input.move.y) * Mathf.Rad2Deg + _cam.eulerAngles.y;
             }
 
-            //Vector3 moveDir = transform.forward * _speed;
-            Vector3 movedir = Quaternion.Euler(0.0f, _targetDirection, 0.0f) * Vector3.forward;
+            Vector3 movedir = Quaternion.Euler(0.0f, _targetAngle, 0.0f) * Vector3.forward;
+            _smoothDir = Vector3.Lerp(_smoothDir, movedir, _directionSmoothTime * Time.deltaTime);
 
-            // check for direction !!!!!!!!!!!!!!!!!!!!!!!!!! do something with it
-            if (_controller.velocity.magnitude > _threshold)
-                _smoothDir = Vector3.Lerp(_smoothDir, movedir, _directionSmoothTime * Time.deltaTime);
+            // start moving and stop moving speeds
+            if (_isGrounded)
+            {
+                if (_input.move != Vector2.zero) _speed = Mathf.Lerp(_speed, targetSpeed, _speedStartSmoothTime * Time.deltaTime);
+                else if (_input.move == Vector2.zero) _speed = Mathf.Lerp(_speed, targetSpeed, _speedStopSmoothTime * Time.deltaTime);
+            }
             else
-                _smoothDir = movedir;
+                _speed = Mathf.Lerp(_speed, targetSpeed, _speedAirborneSmoothTime * Time.deltaTime);
 
             // move
-            _controller.Move(_smoothDir.normalized * (_speed * Time.deltaTime) + new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
+            _controller.Move(_smoothDir.normalized * (_speed * Time.deltaTime) + new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);            
         }
 
         private void RotatePlayer()
@@ -73,7 +71,7 @@ namespace PBM
                 // calculate rotating player towards velocity 
                 Quaternion velocityRotation = Quaternion.LookRotation(_controller.velocity);
                 Quaternion desiredRotation = Quaternion.Euler(0.0f, velocityRotation.eulerAngles.y, 0.0f);
-                Quaternion smoothRotate = Quaternion.Lerp(transform.rotation, desiredRotation, _rotationSmoothTime);
+                Quaternion smoothRotate = Quaternion.Lerp(transform.rotation, desiredRotation, _rotationSmoothTime * Time.deltaTime);
 
                 // rotate player
                 transform.rotation = smoothRotate;

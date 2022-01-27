@@ -1,7 +1,7 @@
 using UnityEngine;
 using TMPro;
 
-namespace PBM
+namespace HzrController
 {
     public class GameManager : MonoBehaviour
     {
@@ -9,7 +9,7 @@ namespace PBM
 
         private void Start()
         {
-            // Application.targetFrameRate = 60;
+            Application.targetFrameRate = 240;
         }
 
         private void Update()

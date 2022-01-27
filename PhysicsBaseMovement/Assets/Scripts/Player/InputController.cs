@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace PBM
+namespace HzrController
 {
     public class InputController : MonoBehaviour
     {

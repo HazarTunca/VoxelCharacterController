@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace PBM
+namespace HzrController
 {
     [RequireComponent(typeof(CharacterController))]
     public abstract class Character : MonoBehaviour
@@ -27,11 +27,6 @@ namespace PBM
         protected float _verticalVelocity;
         private float _terminalVelocity = 50.0f;
 
-        // Acceleration tilt
-        private Vector3 _vel;
-        private Vector3 _lastVel;
-        private Vector3 _acc;
-
         protected virtual void Awake()
         {
             _controller = GetComponent<CharacterController>();
@@ -42,8 +37,6 @@ namespace PBM
             CheckGround();
 
             ApplyGravity();
-            CalculateAcc();
-            TiltCharacter();
         }
 
         protected void CheckGround()
@@ -70,19 +63,6 @@ namespace PBM
             Debug.Log("you ded!");
         }
 
-        private void TiltCharacter()
-        {
-            
-        }
-
-        private void CalculateAcc()
-        {
-            _vel = transform.InverseTransformVector(_controller.velocity);
-            _acc = (_vel - _lastVel) / Time.fixedDeltaTime;
-            _lastVel = _vel;
-
-            if (Mathf.Abs(_acc.x) < _threshold && Mathf.Abs(_acc.z) < _threshold) _acc = Vector3.zero;
-        }
 
 // debug
         private void OnDrawGizmosSelected()

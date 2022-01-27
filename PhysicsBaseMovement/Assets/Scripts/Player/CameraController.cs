@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace PBM
+namespace HzrController
 {
     public class CameraController : MonoBehaviour
     {
@@ -21,7 +21,7 @@ namespace PBM
 
         private float _x;
         private float _y;
-        private Vector3 vel;
+        private Vector3 _vel;
 
         private void Start()
         {
@@ -34,10 +34,9 @@ namespace PBM
             RotateCamera();
         }
 
-        private Vector3 _camVel;
         private void MoveCamera()
         {
-            transform.position = Vector3.SmoothDamp(transform.position, _target.position, ref vel, _followSmoothTime * Time.fixedDeltaTime);
+            transform.position = Vector3.SmoothDamp(transform.position, _target.position, ref _vel, _followSmoothTime * Time.fixedDeltaTime);
         }
 
         private void RotateCamera()
