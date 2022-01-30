@@ -14,18 +14,36 @@ namespace HzrController
         [SerializeField] private float _speedStopSmoothTime = 5.0f;
         [SerializeField] private float _speedAirborneSmoothTime = 0.5f;
         [SerializeField] private float _rotationSmoothTime = 5.0f;
+        [HideInInspector] public Vector3 moveDir;
 
-        // others
+        [Header("Animation")] [Space(10)]
+        [SerializeField] private Animator _animator;
+
+        private int _speedAnimVar;
+        private int _isJumpingAnimVar;
+        private int _isFallingAnimVar;
+
+        // Movement
         private InputController _input;
-        Vector3 _smoothDir;
+        private Vector3 _smoothDir;
         private float _speed;
         private float _targetAngle;
+        private float _lastPosY;
+        private bool _isJumping;
+        private bool _isFalling;
 
         protected override void Awake()
         {
             base.Awake();
 
             _input = GetComponent<InputController>();
+        }
+
+        private void Start()
+        {
+            _speedAnimVar = Animator.StringToHash("Speed");
+            _isJumpingAnimVar = Animator.StringToHash("isJumping");
+            _isFallingAnimVar = Animator.StringToHash("isFalling");
         }
 
         protected override void Update()
@@ -35,6 +53,7 @@ namespace HzrController
             RotatePlayer();
             Move();
             Jump();
+            PlayBaseAnimations();
         }
 
         private void Move()
@@ -48,8 +67,8 @@ namespace HzrController
                 _targetAngle = Mathf.Atan2(_input.move.x, _input.move.y) * Mathf.Rad2Deg + _cam.eulerAngles.y;
             }
 
-            Vector3 movedir = Quaternion.Euler(0.0f, _targetAngle, 0.0f) * Vector3.forward;
-            _smoothDir = Vector3.Lerp(_smoothDir, movedir, _directionSmoothTime * Time.deltaTime);
+            moveDir = Quaternion.Euler(0.0f, _targetAngle, 0.0f) * Vector3.forward;
+            _smoothDir = Vector3.Lerp(_smoothDir, moveDir, _directionSmoothTime * Time.deltaTime);
 
             // start moving and stop moving speeds
             if (_isGrounded)
@@ -82,14 +101,29 @@ namespace HzrController
         {
             if (!_isGrounded)
             {
+                if (transform.position.y > _lastPosY) _isJumping = true;
+                else _isFalling = true;
+
+                _lastPosY = transform.position.y;
+
                 _input.jump = false;
                 return;
             }
+
+            _isJumping = false;
+            _isFalling = false;
 
             if (_input.jump)
             {
                 _verticalVelocity = Mathf.Sqrt(_jumpHeight * -2f * _gravity);
             }
+        }
+
+        private void PlayBaseAnimations()
+        {
+            _animator.SetFloat(_speedAnimVar, _speed);
+            _animator.SetBool(_isJumpingAnimVar, _isJumping);
+            _animator.SetBool(_isFallingAnimVar, _isFalling);
         }
     }
 }
