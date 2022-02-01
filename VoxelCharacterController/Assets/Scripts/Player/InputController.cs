@@ -8,6 +8,9 @@ namespace HzrController
         public Vector2 look;
         public bool jump;
         public bool sprint;
+        public bool loot;
+        public bool drop;
+        public bool attack;
 
         public bool mouseLock = true;
 
@@ -28,10 +31,19 @@ namespace HzrController
             float mouse_y = Input.GetAxis("Mouse Y");
             look = new Vector2(mouse_x, mouse_y);
 
+            // jump
             if (Input.GetKeyDown(KeyCode.Space)) jump = true;
 
+            // sprint
             if (Input.GetKey(KeyCode.LeftShift)) sprint = true;
             else sprint = false;
+
+            // loot & drop
+            if (Input.GetKeyDown(KeyCode.E)) loot = true;
+            if (Input.GetKeyDown(KeyCode.Q)) drop = true;
+
+            // attack
+            if (Input.GetMouseButtonDown(0)) attack = true;
         }
 
         public void LockMouseToggle()

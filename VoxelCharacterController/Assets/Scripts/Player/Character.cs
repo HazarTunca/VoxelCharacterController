@@ -35,7 +35,6 @@ namespace HzrController
         protected virtual void Update()
         {
             CheckGround();
-
             ApplyGravity();
         }
 
@@ -56,6 +55,12 @@ namespace HzrController
             {
                 _verticalVelocity += _gravity * Time.deltaTime;
             }
+        }
+
+        public void ApplyDamage(float amount)
+        {
+            _health -= amount;
+            if (_health <= 0.0f) Die();
         }
 
         protected virtual void Die()
